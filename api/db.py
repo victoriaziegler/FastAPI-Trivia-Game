@@ -12,18 +12,17 @@ pool = ConnectionPool(conninfo=db_url)
 
 
 class CategoryQueries:
-    # THIS IS WORKING
-    def get_all_categories(self, num_results=100):
+    def get_all_categories(self, num_results=100, offset=0):
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                query = ("""
+                params = [num_results, offset]
+                cur.execute("""
                     SELECT id, title, canon
                     FROM categories
-                """)
-
-                if num_results and type(num_results) == int:
-                    query += f"LIMIT {num_results}"
-                cur.execute(query)
+                    ORDER BY id
+                    LIMIT %s
+                    OFFSET %s
+                """, params)
 
                 results = []
                 for row in cur.fetchall():
@@ -31,107 +30,68 @@ class CategoryQueries:
                     for i, column in enumerate(cur.description):
                         record[column.name] = row[i]
                     results.append(record)
+
                 return results
 
-    # def get_n_categories(self, num_results=N*100):
-    #     with pool.connection() as conn:
-    #         with conn.cursor() as cur:
-    #             query = ("""
-    #                 SELECT id, title, canon
-    #                 FROM categories
-    #             """)
-
-    #             if num_results and type(num_results) == int:
-    #                 query += f"LIMIT {num_results} OFFSET %N"
-    #             cur.execute(query)
-
-    #             results = []
-    #             for row in cur.fetchall():
-    #                 record = {}
-    #                 for i, column in enumerate(cur.description):
-    #                     record[column.name] = row[i]
-    #                 results.append(record)
-    #             return results
-
-    def get_category(self, category_id):
+    def create_category(self, request):
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT id, title, canon
-                    FROM categories
-                    WHERE id = %s
-                    """,
-                        [category_id],
-                )
-
-                record = None
-                row = cur.fetchone()
-                if row is not None:
-                    record = {}
-                    for i, column in enumerate(cur.description):
-                        record[column.name] = row[i]
-
-                return record
-
-    def create_category(self, data):
-        with pool.connection() as conn:
-            with conn.cursor() as cur:
-                params = [
-                    data.title,
-                    data.canon,
-                ]
-                cur.execute(
-                    """
+                cur.execute("""
                     INSERT INTO categories (title, canon)
-                    VALUES (%s, %s)
-                    RETURNING category_id, title, canon
-                    """,
-                    params,
-                )
+                    VALUES (%s, false)
+                """, [request.title])
 
-                record = None
+                cur.execute("""
+                    SELECT * FROM categories
+                    WHERE title = %s
+                """, [request.title])
+
                 row = cur.fetchone()
-                if row is not None:
-                    record = {}
-                    for i, column in enumerate(cur.description):
-                        record[column.name] = row[i]
-
-    def update_category(self, data):
-        with pool.connection() as conn:
-            with conn.cursor() as cur:
-                params = [
-                    data.title,
-                    data.canon,
-                ]
-                cur.execute(
-                    """
-                    UPDATE categories
-                    SET title = %s,
-                        canon = %s
-                    WHERE category_id = %s
-                    RETURNING category_id, title, canon
-                    """,
-                    params,
-                )
-
-                record = None
-                row = cur.fetchone()
-                if row is not None:
-                    record = {}
-                    for i, column in enumerate(cur.description):
-                        record[column.name] = row[i]
+                record = {}
+                for i, column in enumerate(cur.description):
+                    record[column.name] = row[i]
 
                 return record
 
-# THIS WONT WORK FOR LOW NUMBERS BUT WORKED FOR A REALLY HIGH NUMBER???? FK ISSUE
-    def delete_category(self, id):
+    def update_category(self, request, cat_id):
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    """
+                params = [request.title, cat_id]
+                cur.execute("""
+                    UPDATE categories
+                    SET title = %s
+                    WHERE id = %s
+                """, params)
+
+                cur.execute("""
+                    SELECT * FROM categories
+                    WHERE id = %s
+                """, [cat_id])
+
+                row = cur.fetchone()
+                record = {}
+                for i, column in enumerate(cur.description):
+                    record[column.name] = row[i]
+
+                return record
+
+    def delete_category(self, cat_id):
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+
+                cur.execute("""
+                    SELECT * FROM categories
+                    WHERE id = %s
+                """, [cat_id])
+
+                row = cur.fetchone()
+
+                cur.execute("""
                     DELETE FROM categories
                     WHERE id = %s
-                    """,
-                    [id],
-                )
+                """, [cat_id])
+
+                if row:
+                    return True
+                else:
+                    return False
