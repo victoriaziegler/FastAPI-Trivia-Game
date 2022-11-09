@@ -2,6 +2,19 @@ volumes:
   trivia-game:
     external: true
 services:
+  api:
+    build:
+      context: api
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    environment:
+      PGHOST: db
+      PGDATABASE: trivia-game
+      PGUSER: trivia-game
+      PGPASSWORD: trivia-game
   db:
     build:
       context: data
