@@ -51,5 +51,5 @@ def update_category(category_id: int, category_in: CategoryIn, queries: Category
 
 
 @router.delete("/api/categories/{cat_id}", response_model=bool)
-def delete_category(category_id: int, queries: CategoryQueries = Depends()):
-    return queries.delete_category(category_id)
+def delete_category(cat_id: int, queries: CategoryQueries = Depends()):
+    return queries.delete_category(cat_id)
