@@ -1,6 +1,6 @@
 # FastAPI Trivia Game
 
-The purpose of this project is to display understanding of FastAPI through creation of an interactive trivia game. There is one microservice and database that are Docker containerized. The endpoints were tested in development utilizing Insomnia. 
+The purpose of this project is to display understanding of FastAPI through creation of an interactive trivia game. There is one microservice and a PostgreSQL database that are Docker containerized. The endpoints were tested in development utilizing Insomnia. 
 
 ## Running the Program
 
